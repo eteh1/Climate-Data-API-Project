@@ -1,0 +1,102 @@
+# Install required libraries
+# Uncomment below line if libraries are not already installed
+# !pip install pandas numpy matplotlib seaborn requests scikit-learn
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from io import StringIO
+import requests
+
+# Step 1: Load Datasets
+# Replace with your own dataset paths or links if using local CSVs
+def load_data(url):
+    response = requests.get(url)
+    data = StringIO(response.text)
+    return pd.read_csv(data)
+
+# Example URLs for data (substitute with actual data sources)
+temperature_data = load_data('temperature_data_url.csv')  # Replace with actual URL or file path
+precipitation_data = load_data('precipitation_data_url.csv')  # Replace with actual URL or file path
+sea_level_data = load_data('sea_level_data_url.csv')  # Replace with actual URL or file path
+
+# Step 2: Data Cleaning Function
+def clean_data(df, date_column):
+    df[date_column] = pd.to_datetime(df[date_column])
+    df = df.sort_values(by=date_column)
+    df = df.dropna()  # Drop missing values
+    return df
+
+# Clean each dataset
+temperature_data = clean_data(temperature_data, 'Date')
+precipitation_data = clean_data(precipitation_data, 'Date')
+sea_level_data = clean_data(sea_level_data, 'Date')
+
+# Step 3: Data Visualization
+
+# Temperature Trend
+plt.figure(figsize=(10, 6))
+plt.plot(temperature_data['Date'], temperature_data['Temperature'], color='red', label='Temperature')
+plt.title('Temperature Over Time')
+plt.xlabel('Year')
+plt.ylabel('Temperature (°C)')
+plt.legend()
+plt.show()
+
+# Precipitation Trend
+plt.figure(figsize=(10, 6))
+plt.plot(precipitation_data['Date'], precipitation_data['Precipitation'], color='blue', label='Precipitation')
+plt.title('Precipitation Over Time')
+plt.xlabel('Year')
+plt.ylabel('Precipitation (mm)')
+plt.legend()
+plt.show()
+
+# Sea Level Rise Trend
+plt.figure(figsize=(10, 6))
+plt.plot(sea_level_data['Date'], sea_level_data['Sea_Level_Rise'], color='green', label='Sea Level Rise')
+plt.title('Sea Level Rise Over Time')
+plt.xlabel('Year')
+plt.ylabel('Sea Level Rise (mm)')
+plt.legend()
+plt.show()
+
+# Step 4: Correlation Analysis
+
+# Merge datasets for correlation analysis
+merged_data = pd.merge(temperature_data, precipitation_data, on='Date').merge(sea_level_data, on='Date')
+correlation_matrix = merged_data[['Temperature', 'Precipitation', 'Sea_Level_Rise']].corr()
+
+# Correlation Heatmap
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Matrix of Climate Variables')
+plt.show()
+
+# Step 5: Predictive Analysis (Simple Linear Regression on Sea Level Rise)
+
+# Prepare data for linear regression
+X = np.array(pd.to_datetime(sea_level_data['Date']).map(pd.Timestamp.toordinal)).reshape(-1, 1)
+y = sea_level_data['Sea_Level_Rise']
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Linear Regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_test)
+
+# Visualization of Prediction
+plt.figure(figsize=(10, 6))
+plt.scatter(X_test, y_test, color='green', label='Actual')
+plt.plot(X_test, y_pred, color='red', label='Predicted')
+plt.title('Sea Level Rise Prediction')
+plt.xlabel('Year')
+plt.ylabel('Sea Level Rise (mm)')
+plt.legend()
+plt.show()
